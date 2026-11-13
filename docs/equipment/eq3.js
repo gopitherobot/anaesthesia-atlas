@@ -1,0 +1,141 @@
+/* Equipment & procedures, part 3: lines, catheters, drains */
+ATLAS.refGroup("eq",{key:"lines",col:"abp",name:"Lines, catheters & drains",
+intro:"<p>Every invasive device follows the same safety frame: <b>indication</b> and consent, <b>LocSSIP</b> checklist, full <b>asepsis</b> (ANTT, 2% chlorhexidine in 70% alcohol, sterile field), <b>ultrasound guidance</b> where available (NICE for internal jugular CVC), <b>confirmation</b> of position before use, and a <b>care bundle</b> afterwards. Flow through a cannula follows Hagen–Poiseuille (Q ∝ r⁴/L): short and wide beats long and thin. Monitoring physics (damping, transducers, thermodilution) is in Stage 11.</p>",
+diagHTML:`<div class="fig"><h3>Cannula flow: Poiseuille in practice</h3><div class="ctl"><div class="seg" id="eql-fl"></div><div class="seg" id="eql-pr"></div></div><div class="svgbox"><svg id="eql-svg" viewBox="0 0 560 330" role="img" aria-label="Flow by device"></svg></div><div class="ctl"><label>Radius × <input type="range" id="eql-r" min="0.5" max="2" step="0.05" value="1"><output id="eql-ro">1.00</output></label><label>Length × <input type="range" id="eql-l" min="0.25" max="4" step="0.05" value="1"><output id="eql-lo">1.00</output></label></div><div class="readout" id="eql-out"></div></div>
+<div class="fig"><h3>PA catheter: advance and watch the waveform</h3><div class="ctl"><label>Depth from right IJ (cm) <input type="range" id="eqp-d" min="0" max="60" step="1" value="10"><output id="eqp-do">10 cm</output></label><div class="seg" id="eqp-b"></div></div><div class="svgbox"><svg id="eqp-svg" viewBox="0 0 560 280" role="img" aria-label="PA catheter pressure waveform"></svg></div><div class="readout" id="eqp-out"></div></div>
+<div class="fig" style="grid-column:1/-1"><h3>Central venous catheter: route, tip and depth</h3><div class="ctl"><div class="seg" id="eqv-site"></div><label>Patient height <input type="range" id="eqv-h" min="140" max="200" value="170"><output id="eqv-ho">170 cm</output></label></div><div class="svgbox"><svg id="eqv-svg" viewBox="0 0 560 430" role="img" aria-label="Central veins with catheter route"></svg></div><div class="readout" id="eqv-out"></div></div>`,
+init(){const H=ATLAS.h,$=H.$;
+/* ---- cannula flow ---- */
+const fsv=$("#eql-svg");if(!fsv)return;let FL="cry",PR="grav";
+const DEV=[["24G (yellow)",20,"var(--etco2)"],["22G (blue)",36,"var(--spo2)"],["20G (pink)",60,"var(--abp)"],["18G (green)",90,"var(--ecg)"],["16G (grey)",180,"var(--muted)"],["14G (orange)",270,"var(--etco2)"],["CVC distal lumen 16G, 20 cm",Math.round(180*45/200),"var(--nibp)"],["8.5 Fr introducer, 10 cm",Math.round(270*Math.pow(2.5/1.6,4)*45/100),"var(--nibp)"]];
+function drawF(){const fk={cry:1,blood:0.45}[FL],pk={grav:1,bag:2.5}[PR];const vals=DEV.map(d=>d[1]*fk*pk);const mx=Math.max(...vals)*1.1;fsv.innerHTML="";const A=(t,a,tx)=>{const e=document.createElementNS(H.SVGNS,t);for(const k in a)e.setAttribute(k,a[k]);if(tx!=null)e.textContent=tx;fsv.append(e);return e};
+  DEV.forEach((d,i)=>{const y=14+i*36,w=vals[i]/mx*300;A("text",{x:208,y:y+19,"text-anchor":"end",class:"lbl"},d[0]);A("rect",{x:214,y:y+4,width:Math.max(2,w),height:22,rx:4,fill:d[2],"fill-opacity":.8});A("text",{x:220+w,y:y+20,style:"font-size:11px;fill:var(--ink2)"},Math.round(vals[i])+" mL/min")});
+  const r=+$("#eql-r").value,l=+$("#eql-l").value;$("#eql-ro").textContent=r.toFixed(2);$("#eql-lo").textContent=l.toFixed(2);const rel=Math.pow(r,4)/l;
+  $("#eql-out").innerHTML=`Hagen–Poiseuille: <b>Q = πΔPr⁴ / 8ηL</b>. Your change: radius ×${r.toFixed(2)}, length ×${l.toFixed(2)} → flow <b>×${rel.toFixed(2)}</b> (doubling the radius gives 16×). ${FL==="blood"?"Blood is 3–4× more viscous than crystalloid (warm and dilute it). ":""}${PR==="bag"?"A pressure bag at 300 mmHg typically gives 2–3× the gravity flow in practice (turbulence and giving-set resistance limit the theoretical linear gain). ":"Gravity at 1 m ≈ 74 mmHg driving pressure. "}<br><span class="src">Peripheral values are typical manufacturer flows for water at ~1 m; CVC and sheath values are Poiseuille estimates from radius and length, shown to make the point — a long 16G CVC lumen flows less than a short 18G cannula.</span>`}
+H.seg($("#eql-fl"),[["cry","Crystalloid"],["blood","Red cells"]],v=>{FL=v;drawF()},"cry");H.seg($("#eql-pr"),[["grav","Gravity"],["bag","Pressure bag"]],v=>{PR=v;drawF()},"grav");$("#eql-r").oninput=drawF;$("#eql-l").oninput=drawF;
+
+/* ---- PA catheter ---- */
+const psv=$("#eqp-svg");let BAL="on";
+const Z=[[0,15,"Sheath / SVC","CVP trace: a, c, v waves, mean 2–6 mmHg. Inflate the balloon (1.5 mL air) once beyond the introducer (~15 cm)."],[15,25,"Right atrium","Mean 2–6 mmHg with a, c, v waves. Continue advancing with the balloon inflated."],[25,35,"Right ventricle","Systolic 15–25, diastolic 0–8 mmHg; diastolic pressure rises through diastole. Arrhythmia risk (ectopics, RBBB): advance promptly."],[35,47,"Pulmonary artery","Systolic 15–25, diastolic 8–15 mmHg; dicrotic notch and diastolic step-up compared with RV (diastole now falls)."],[47,56,"Wedge (PAWP)","Damped atrial-type trace with a and v waves, mean 6–12 mmHg (estimates LA pressure). Deflate the balloon immediately after reading: the trace must return to PA. Pull back if wedged with the balloon deflated."],[56,61,"Too far","Spontaneous wedge or overwedge: risk of pulmonary infarction and pulmonary artery rupture. Withdraw to PA position with balloon deflated."]];
+const g=(t,c,w)=>Math.exp(-Math.pow((t-c)/w,2));
+const lin=(P,t)=>{for(let k=1;k<P.length;k++)if(t<=P[k][0]){const [a,b]=[P[k-1],P[k]];const f=(t-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*(0.5-0.5*Math.cos(Math.PI*f))}return P[P.length-1][1]};
+const wf={0:t=>4+2.2*g(t,0.05,0.04)+1.2*g(t,0.17,0.03)+2*g(t,0.6,0.07),1:t=>4+2.5*g(t,0.05,0.04)+1.3*g(t,0.17,0.03)+2.2*g(t,0.6,0.07),2:t=>lin([[0,5],[0.1,6],[0.24,25],[0.36,21],[0.44,2],[1,5]],t),3:t=>lin([[0,9],[0.1,8.5],[0.24,25],[0.4,16],[0.44,13.5],[0.48,15],[1,9]],t),4:t=>10+2.4*g(t,0.12,0.06)+3*g(t,0.68,0.08),5:t=>16+1.2*g(t,0.12,0.06)+1.6*g(t,0.68,0.08)};
+function drawP(){const d=+$("#eqp-d").value;$("#eqp-do").textContent=d+" cm";let zi=Z.findIndex(z=>d>=z[0]&&d<z[1]);if(zi<0)zi=5;if(zi===4&&BAL==="off")zi=3;
+  const pl=H.plot(psv,{w:560,h:280,x0:0,x1:3,y0:0,y1:32,xt:[0,1,2,3],yt:[0,10,20,30],xl:"Time (s)",yl:"mmHg"});const pts=H.range(0,3,300).map(t=>[t,wf[zi](t%1)]);pl.line(pts,{stroke:"var(--abp)"});
+  pl.text(0.05,30,Z[zi][2],{fill:"var(--abp)"});$("#eqp-out").innerHTML=`<b>${Z[zi][2]}</b> (${d} cm, balloon ${BAL==="on"?"inflated":"deflated"}). ${Z[zi][3]}<br><span class="src">Typical distances from the right internal jugular: RA 20–25 cm, RV 30–35 cm, PA 40–45 cm, wedge 45–55 cm (add ~10 cm from the left or femoral routes).</span>`}
+H.seg($("#eqp-b"),[["on","Balloon up"],["off","Balloon down"]],v=>{BAL=v;drawP()},"on");$("#eqp-d").oninput=drawP;
+
+/* ---- CVC route ---- */
+const vsv=$("#eqv-svg");let SITE="rij";
+const ROUTE={rij:[[192,40],[200,140],[225,190],[227,262]],lij:[[328,40],[320,140],[232,190],[227,252]],rsc:[[90,138],[200,145],[225,190],[227,258]],lsc:[[430,138],[320,145],[232,190],[227,252]],fem:[[250,428],[246,380],[243,355]],picc:[[20,118],[60,134],[200,145],[225,190],[227,262]]};
+const INFO={rij:["Right internal jugular","Straightest route to the SVC; ultrasound-guided, out-of-plane or in-plane, apex of the triangle formed by the two heads of sternocleidomastoid, lateral to the carotid. Peres depth ≈ height/10 cm.",h=>h/10],lij:["Left internal jugular","Longer route crossing the left brachiocephalic vein; tip must lie parallel to the SVC wall (not abutting the lateral wall: perforation risk). Peres ≈ height/10 + 4 cm.",h=>h/10+4],rsc:["Right subclavian","Lowest infection and thrombosis rates, comfortable for awake patients, but higher pneumothorax risk and incompressible artery. Peres ≈ height/10 − 2 cm.",h=>h/10-2],lsc:["Left subclavian","Smooth curve into the SVC (preferred for PA catheters and pacing by some). Peres ≈ height/10 + 2 cm.",h=>h/10+2],fem:["Femoral","Easiest in emergencies and CPR (away from the chest), compressible, no pneumothorax; higher infection and DVT risk. Tip in the IVC; usual insertion depth 20–25 cm.",()=>22],picc:["PICC (basilic vein)","Inserted in the upper arm under ultrasound; length measured from insertion point to the right sternoclavicular joint then down to the 3rd intercostal space; tip at the cavo-atrial junction (ECG tip confirmation or X-ray).",null]};
+function drawV(){vsv.innerHTML="";const A=(t,a,tx)=>{const e=document.createElementNS(H.SVGNS,t);for(const k in a)e.setAttribute(k,a[k]);if(tx!=null)e.textContent=tx;vsv.append(e);return e};const vc="var(--nibp)";
+  A("path",{d:"M270 20 L270 228 M270 228 L240 262 M270 228 L300 262",stroke:"var(--muted)","stroke-width":10,"stroke-opacity":.25,fill:"none"});A("text",{x:282,y:235,class:"lbl"},"carina");
+  [["M190 20 L200 140 L225 190",8],["M330 20 L320 140 L232 190",8],["M50 136 L200 145",9],["M470 136 L320 145",9],["M225 190 L228 272",14],["M240 330 L246 428",14],["M15 116 L60 134",5]].forEach(([d,w])=>A("path",{d,stroke:vc,"stroke-width":w,"stroke-opacity":.35,fill:"none","stroke-linecap":"round"}));
+  A("ellipse",{cx:236,cy:302,rx:34,ry:36,fill:vc,"fill-opacity":.25,stroke:vc});A("text",{x:236,y:306,"text-anchor":"middle",class:"lbl"},"RA");
+  A("text",{x:150,y:30,class:"lbl"},"R IJ");A("text",{x:340,y:30,class:"lbl"},"L IJ");A("text",{x:60,y:126,class:"lbl"},"R subclavian");A("text",{x:380,y:126,class:"lbl"},"L subclavian");A("text",{x:160,y:240,class:"lbl"},"SVC");A("text",{x:256,y:400,class:"lbl"},"IVC");A("text",{x:300,y:178,class:"lbl"},"L brachiocephalic");
+  A("line",{x1:200,y1:262,x2:262,y2:262,stroke:"var(--ecg)","stroke-dasharray":"4 3"});A("text",{x:120,y:266,class:"lbl",fill:"var(--ecg)"},"cavo-atrial junction");
+  const pts=ROUTE[SITE];A("path",{d:pts.map((p,i)=>(i?"L":"M")+p[0]+" "+p[1]).join(" "),stroke:"var(--spo2)","stroke-width":4,fill:"none","stroke-linecap":"round","stroke-linejoin":"round"});const tp=pts[pts.length-1];A("circle",{cx:tp[0],cy:tp[1],r:6,fill:"var(--spo2)"});
+  const h=+$("#eqv-h").value;$("#eqv-ho").textContent=h+" cm";const I=INFO[SITE];const dep=I[2]?I[2](h):null;
+  $("#eqv-out").innerHTML=`<b>${I[0]}.</b> ${I[1]}${dep?` <b>Peres estimate ≈ ${dep.toFixed(0)} cm</b> (formula estimates tend to be generous; many operators place right IJ lines at 13–15 cm — confirm the tip rather than trusting a number).`:""}<br><span class="src">Target tip: lower SVC or cavo-atrial junction, roughly at or just below the carina on the chest X-ray (the carina lies above the pericardial reflection). Confirm with ultrasound (venous wire), transduced venous waveform or blood gas before dilation, then X-ray or ECG tip location.</span>`}
+H.seg($("#eqv-site"),[["rij","R IJ"],["lij","L IJ"],["rsc","R subclavian"],["lsc","L subclavian"],["fem","Femoral"],["picc","PICC"]],v=>{SITE=v;drawV()},"rij");$("#eqv-h").oninput=drawV}
+});
+
+ATLAS.refAdd("eq",[
+{id:"piv",g:"lines",n:"Peripheral IV cannula",s:"The commonest invasive procedure",dg:["lines",0],
+what:"Over-the-needle catheter (PTFE or polyurethane) with a colour-coded gauge; flow depends on internal radius and length (Poiseuille). Ultrasound-guided peripheral cannulation helps with difficult veins.",
+ind:"Drug and fluid administration, blood products, induction of anaesthesia.",
+ci:"Infected or burnt skin, AV fistula arm, lymphoedema or axillary node clearance side (relative), injured limb.",
+eqp:"Tourniquet, 2% chlorhexidine/70% alcohol wipe, cannula, sterile dressing, flush, sharps bin; local anaesthetic (EMLA, Ametop, or 1% lidocaine for ≥ 18G).",
+steps:["Hand hygiene, explain, choose a straight vein away from joints.","Apply tourniquet, clean for 30 s and let dry (do not re-palpate).","Anchor the vein, insert bevel up at 10–30°, watch for flashback.","Advance a further 2 mm, then slide the catheter off the needle.","Release the tourniquet, occlude the vein, remove the needle into the sharps bin.","Flush, secure with a sterile transparent dressing, label and document (VIP score)."],
+cx:"Failure, haematoma, extravasation and tissue necrosis (vasopressors, calcium, bicarbonate, thiopental), phlebitis (VIP score), infection, needlestick, intra-arterial injection.",
+sz:["Gauge, colour and flow (water, ~1 m)",["Gauge","Colour","Typical flow"],[["24G","Yellow","~20 mL/min"],["22G","Blue","~36 mL/min"],["20G","Pink","~60 mL/min"],["18G","Green","~90 mL/min"],["16G","Grey","~180 mL/min"],["14G","Orange","~270 mL/min"]]],
+p:["Two 14–16G cannulae beat a CVC for resuscitation.","Visual infusion phlebitis (VIP) score guides removal; resite on clinical indication, not routinely every 72 h (NICE)."],
+rel:["arterial","cvc","io"],aka:["cannula","venflon","IV access","peripheral cannula"]},
+
+{id:"arterial",g:"lines",n:"Arterial line",s:"Continuous blood pressure and sampling",
+what:"A 20G (adult) or 22G cannula in a peripheral artery connected by stiff, short, bubble-free tubing to a transducer with a pressurised (300 mmHg) flush at 3 mL/h. Damping and resonance are covered in Stage 11.",
+ind:"Beat-to-beat BP monitoring (major surgery, vasoactive drugs, instability), frequent arterial gases, cardiac output monitoring by pulse contour, induced hypotension.",
+ci:"Infection at site, inadequate collateral flow, AV fistula arm, Raynaud's (relative), coagulopathy (choose compressible site).",
+eqp:"Arterial cannula (± integral guidewire), transducer set, pressure bag, saline (heparin no longer routine), dressing; ultrasound.",
+steps:["Choose site: radial (non-dominant) first; brachial, femoral, dorsalis pedis, axillary alternatives.","Check collateral circulation clinically (modified Allen's test has poor predictive value; ultrasound or Doppler better).","Wrist extended over a roll; aseptic prep; local anaesthetic.","Puncture at 30–45° (ultrasound in-plane or out-of-plane); on flashback, flatten and advance the catheter (or wire, Seldinger).","Connect, zero to atmosphere at the level of the right atrium (phlebostatic axis, 4th ICS mid-axillary line), check the waveform and do a fast-flush test.","Secure, label the line red (arterial), and never inject drugs."],
+chk:"Square-wave (fast flush) test: 1–2 oscillations before return to baseline = optimally damped (see Stage 11).",
+cx:"Distal ischaemia, thrombosis, haematoma, infection, pseudoaneurysm, inadvertent intra-arterial injection (catastrophic ischaemia), nerve injury (median at brachial), air embolism, haemorrhage from disconnection.",
+p:["NPSA/MHRA warning: use 0.9% saline (not glucose) for the flush — glucose contamination of samples has caused fatal insulin errors.","Systolic amplification: distal arteries show higher systolic and lower diastolic pressures but a similar MAP."],
+rel:["piv","cvc"],aka:["arterial line","art line","A-line","radial artery cannulation"]},
+
+{id:"cvc",g:"lines",n:"Central venous catheter (internal jugular)",s:"Ultrasound-guided Seldinger technique",dg:["lines",2],
+what:"Multi-lumen catheter (triple- or quad-lumen 7 Fr, 15–20 cm) inserted by the Seldinger technique into a central vein, tip in the lower SVC or cavo-atrial junction. NICE (2002) recommends ultrasound guidance for internal jugular insertion.",
+ind:"Vasopressors and irritant drugs (noradrenaline, amiodarone, KCl, TPN, chemotherapy), CVP and ScvO₂ monitoring, poor peripheral access, renal replacement or plasmapheresis (vascaths), transvenous pacing, PA catheter.",
+ci:"Infection at site, ipsilateral thrombosis; relative: coagulopathy (choose compressible site), contralateral pneumothorax (subclavian), uncooperative patient.",
+eqp:"CVC pack, ultrasound with sterile sheath, full barrier precautions (cap, mask, sterile gown, gloves, large drape), 2% chlorhexidine/70% alcohol, local anaesthetic, saline flushes, sutures or securement device, sterile dressing.",
+steps:["LocSSIP sign-in: consent, coagulation, platelets, allergies, ultrasound scan of both sides.","Position: head-down 10–15° (fills the vein, reduces air embolism), head slightly turned away.","Full asepsis, drape, flush all lumens.","Ultrasound-guided needle entry into the IJV, lateral to the carotid; aspirate venous blood.","Pass the J-wire (no more than ~15–20 cm; watch ECG for ectopics); <b>confirm the wire is in the vein</b> on ultrasound (long and short axis) before dilating.","Small skin nick, dilate over the wire (dilator only to vein depth), railroad the catheter, remove the wire (<b>count the wire out</b>).","Aspirate and flush all lumens; confirm venous placement (dark non-pulsatile blood, transduced venous waveform, or blood gas).","Secure, dress, LocSSIP sign-out (wire removed, sharps count) and chest X-ray (or ultrasound) for tip and pneumothorax."],
+chk:"Before dilation: ultrasound wire visualisation in the vein, or manometry. After: X-ray tip at/just below the carina; no pneumothorax.",
+cx:"Immediate: arterial puncture or cannulation (do not remove a dilated large-bore catheter from the carotid: vascular surgery), pneumothorax, haemothorax, arrhythmias, air embolism, retained guidewire (never event), thoracic duct injury (left). Late: CLABSI (catheter-related bloodstream infection), thrombosis, erosion and tamponade, catheter fracture.",
+p:["Retained guidewire is a never event: keep a hand on the wire and count it out at sign-out.","Air embolism: head-down position for insertion and removal; patient performs Valsalva or exhales; occlusive dressing for 24 h after removal.","Arterial dilation of a carotid: leave the catheter in situ and call vascular or interventional radiology."],
+rel:["cvc_sites","picc","pac","asepsis_bundles"],aka:["central line","CVC","central venous catheter","internal jugular","Seldinger"]},
+
+{id:"cvc_sites",g:"lines",n:"Central venous access sites compared",s:"Internal jugular, subclavian, femoral",dg:["lines",2],
+what:"Site choice balances operator skill, ultrasound visibility, patient factors and complication profile.",
+sz:["Site comparison",["Site","Advantages","Disadvantages","Typical depth"],[["Right internal jugular","Ultrasound-friendly, straight route, compressible","Patient comfort, infection moderate, carotid puncture","~13–17 cm (Peres: height/10)"],["Left internal jugular","Alternative when right unavailable","Longer tortuous route, thoracic duct, tip abutment","~17–21 cm (Peres: height/10 + 4)"],["Subclavian","Lowest infection and thrombosis, comfortable","Pneumothorax, artery incompressible, harder ultrasound","R height/10 − 2, L height/10 + 2 (Peres)"],["Femoral","Fast, CPR-compatible, no pneumothorax","Highest infection and DVT, limits mobility","20–25 cm (tip in IVC)"]]],
+p:["Subclavian has the lowest CLABSI rate (3SITES trial) but more pneumothorax; ultrasound reduces mechanical complications at every site."],
+rel:["cvc","picc"],aka:["subclavian line","femoral line","vascath"]},
+
+{id:"picc",g:"lines",n:"PICC & midline",s:"Peripherally inserted central catheter",dg:["lines",2],
+what:"PICC: 4–6 Fr single- or double-lumen catheter inserted under ultrasound into the basilic (or brachial, cephalic) vein above the elbow, tip at the cavo-atrial junction. Midline: 8–20 cm catheter with tip in the axillary vein (not central).",
+ind:"Medium-term access (weeks to months): antibiotics, chemotherapy, TPN, difficult peripheral access. Midlines: 1–4 weeks of non-irritant therapy.",
+ci:"Renal failure where veins may be needed for fistula (preserve arm veins: discuss with renal team), infection, thrombosis, lymphoedema.",
+steps:["Measure: insertion point to right sternoclavicular joint then to 3rd intercostal space.","Ultrasound-guided puncture with microintroducer (modified Seldinger).","Advance the catheter with the patient's head turned towards the arm (reduces IJ malposition).","Confirm tip by ECG technique (maximal P wave) or chest X-ray.","Secure with a securement device; dress."],
+cx:"Upper-limb DVT (higher than CVC), occlusion, CLABSI, phlebitis, malposition into the IJ, migration.",
+p:["PICCs are not suitable for rapid infusion: long and narrow."],
+rel:["cvc","piv"],aka:["PICC","midline","peripherally inserted central catheter"]},
+
+{id:"pac",g:"lines",n:"Pulmonary artery catheter",s:"Swan–Ganz flow-directed catheter",dg:["lines",1],
+what:"110 cm, 7–7.5 Fr balloon-tipped catheter floated through the right heart into a branch pulmonary artery via an 8.5 Fr introducer. Lumens: distal (PA pressure, mixed venous sampling), proximal (CVP, injectate at 30 cm), balloon, thermistor (4 cm from tip), ± continuous CO and SvO₂ fibreoptics.",
+ind:"Selected cardiac surgery, severe pulmonary hypertension and RV failure, complex shock unresponsive to therapy, transplant assessment, measurement of CO, SvO₂, PAWP and calculated resistances.",
+ci:"Absolute: tricuspid or pulmonary valve prosthesis or stenosis, RA/RV mass or thrombus, tetralogy of Fallot. Relative: LBBB (risk of complete heart block), coagulopathy, recent pacing wires.",
+steps:["Insert an introducer sheath (usually right IJ).","Test the balloon (1.5 mL air), flush lumens, zero and level transducers.","Pass through the sheath's sterile sleeve to ~15 cm, inflate the balloon.","Advance watching the trace: RA (20–25 cm), RV (30–35), PA (40–45), wedge (45–55).","Deflate the balloon: PA trace must return. Withdraw if it does not.","Lock the sleeve; chest X-ray (tip within the mediastinal shadow, zone 3 region)."],
+chk:"Wedge only intermittently, with ≤ 1.5 mL and for < 15 s; continuous PA trace otherwise.",
+cx:"Arrhythmias (VT, RBBB, complete heart block in pre-existing LBBB), PA rupture (haemoptysis; mortality ~50%), pulmonary infarction, knotting, valve damage, infection, thrombosis, balloon rupture.",
+sec:[["Derived values","Cardiac output by thermodilution (Stewart–Hamilton), SvO₂ 65–75%, PAWP 6–12 mmHg, SVR 800–1200 and PVR 100–200 dyn·s/cm⁵ (see Stage 11 calculators)."],["West zone 3","The tip should lie where Pa > Pv > PA (dependent lung) so PAWP reflects LA pressure; PEEP > 10 cmH₂O distorts readings."]],
+p:["PAC-Man (2005): no outcome benefit from routine PAC use in critically ill patients — use for specific questions."],
+rel:["cvc"],aka:["Swan-Ganz","PA catheter","PAC","pulmonary artery catheter","PAWP"]},
+
+{id:"io",g:"lines",n:"Intraosseous access",s:"Rapid vascular access in emergencies",
+what:"Needle into the medullary cavity, which drains into the central circulation via non-collapsible venous sinusoids. Powered drivers (EZ-IO) with colour-coded needles (pink 15 mm, blue 25 mm, yellow 45 mm).",
+ind:"Cardiac arrest or shock when IV access fails within ~90 s (children and adults), major trauma, burns.",
+ci:"Fracture in the same bone, previous IO in the same bone within 48 h, infection, prosthesis, osteogenesis imperfecta or severe osteoporosis.",
+steps:["Sites: proximal humerus (adults: fastest flow), proximal tibia (2 cm below and medial to the tibial tuberosity), distal tibia, distal femur (infants).","Clean; drill perpendicular to bone until loss of resistance; remove the stylet.","Confirm: aspiration of marrow (send for gas, glucose, cross-match but not routine FBC), needle stands unsupported, free flush.","Awake patients: lidocaine 2% (0.5 mg/kg, max 40 mg) slowly through the needle before infusing.","Infuse under pressure; secure; maximum 24 h."],
+cx:"Extravasation and compartment syndrome, infection (osteomyelitis), fracture, growth plate injury (rare), fat embolism.",
+p:["All resuscitation drugs and blood can be given IO at the same doses as IV.","Humeral flows are higher than tibial; pressure is needed for useful flow."],
+rel:["piv"],aka:["IO","intraosseous","EZ-IO"]},
+
+{id:"urinary",g:"lines",n:"Urinary catheter",s:"Urethral catheterisation",
+what:"Foley catheter (two-way, balloon 10 mL) sized in French gauge (Fr = circumference in mm = 3 × diameter in mm). Silicone or hydrogel-coated latex; three-way catheters for irrigation.",
+ind:"Urine output monitoring (major surgery, sepsis, AKI), retention, long operations, epidural analgesia (sometimes), irrigation.",
+ci:"Suspected urethral injury (blood at the meatus, pelvic fracture, high-riding prostate) — suprapubic or urology review.",
+steps:["Aseptic technique; clean the meatus.","Instil lidocaine gel (wait 3–5 min).","Insert to the hilt (male) or until urine flows (female), then inflate the balloon with sterile water.","Withdraw gently to seat the balloon; connect a closed drainage system; document residual volume.","Male: replace the foreskin (prevent paraphimosis)."],
+cx:"Catheter-associated UTI, urethral trauma and false passage, balloon inflation in the urethra, paraphimosis, bladder spasm.",
+p:["Remove as soon as possible: CAUTI risk rises ~5% per day.","Target urine output ≥ 0.5 mL/kg/h."],
+rel:["ng"],aka:["catheter","Foley","urinary catheter","urethral catheter"]},
+
+{id:"ng",g:"lines",n:"Nasogastric tube",s:"Insertion and confirmation",
+what:"Wide-bore Ryle's tube (14–18 Fr) for drainage or fine-bore (6–8 Fr) feeding tube. NPSA (2011) and NHS Improvement guidance: never use until position is confirmed.",
+ind:"Gastric decompression (obstruction, ileus, before RSI in some cases), enteral feeding, drug administration.",
+ci:"Basal skull fracture (use orogastric), oesophageal varices or recent oesophageal surgery (caution), facial fractures.",
+steps:["Measure nose → earlobe → xiphisternum (NEX).","Lubricate; pass along the floor of the nose; ask the patient to swallow (sips of water) as it reaches the pharynx.","Anaesthetised patient: flex the neck, use laryngoscope and Magill forceps or a cold stiffened tube.","Confirm position: aspirate pH ≤ 5.5 on CE-marked paper (first line), or chest X-ray interpreted by a competent person (tube follows the oesophagus, bisects the carina, crosses the diaphragm in the midline, tip below the left hemidiaphragm).","Secure and document; re-check before each use."],
+cx:"Misplacement into the trachea and lung (feeding into the lung is a never event), pneumothorax, epistaxis, oesophageal perforation, intracranial placement (skull fracture), sinusitis.",
+p:["Never use the 'whoosh' test, litmus paper or absence of respiratory distress to confirm position."],
+rel:["urinary"],aka:["NG tube","nasogastric","Ryles","NGT"]},
+
+{id:"chest_drain",g:"lines",n:"Chest drain",s:"Seldinger or open (surgical) insertion",
+what:"Tube into the pleural space connected to an underwater seal (or digital) drainage system. BTS 2023 pleural guideline: ultrasound before insertion for fluid, insertion in the <b>triangle of safety</b>.",
+ind:"Pneumothorax (tension after decompression, large or symptomatic secondary, ventilated), haemothorax, empyema, malignant effusion, post-thoracic surgery.",
+ci:"Uncorrected coagulopathy (relative), lung adherent to chest wall, uncertain diagnosis (e.g. bulla vs pneumothorax: CT).",
+eqp:"Ultrasound, sterile pack, local anaesthetic (lidocaine up to 3 mg/kg), Seldinger kit (12–14 Fr) or large-bore tube (28–32 Fr for haemothorax), suture, underwater seal bottle.",
+steps:["Consent, LocSSIP, ultrasound site marking; position arm behind the head.","Triangle of safety: lateral border of pectoralis major, anterior border of latissimus dorsi, line at the 5th intercostal space (nipple level), apex below the axilla.","Asepsis; infiltrate local anaesthetic down to the pleura and aspirate air or fluid to confirm.","Seldinger: needle above the rib (avoid neurovascular bundle under the rib), wire, dilate, insert tube. Open: incision, blunt dissection over the rib, finger sweep, then tube.","Connect to underwater seal below chest level; check swinging and bubbling.","Suture (no purse-string for small drains), dress, chest X-ray."],
+chk:"Swinging of fluid with respiration (patency), bubbling (air leak), drainage volume; drain bottle always below the patient.",
+cx:"Organ injury (lung, liver, spleen, heart), bleeding (intercostal vessels), re-expansion pulmonary oedema (drain large effusions slowly, ≤ 1.5 L in the first hour), infection, subcutaneous emphysema, malposition, dislodgement.",
+p:["Never clamp a bubbling drain (tension pneumothorax).","Tension pneumothorax in arrest or ventilated trauma: finger thoracostomy (4th–5th ICS, mid-axillary line) is faster and more reliable than needle decompression."],
+rel:["cvc"],aka:["chest drain","intercostal drain","thoracostomy","triangle of safety"]}
+]);

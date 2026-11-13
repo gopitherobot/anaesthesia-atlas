@@ -1,0 +1,5 @@
+*.bak
+.DS_Store
+_s.html
+_test.html
+_w.html

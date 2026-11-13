@@ -1,0 +1,36 @@
+/* EDAIC Part II trainer: exam blueprint and question helpers. Exam rules follow the ESAIC Diploma Guide. */
+ATLAS.tr={bank:[],
+soe:[
+{n:1,col:"spo2",short:"Physiology & anatomy",name:"Applied basic science: physiology and anatomy",when:"Morning",
+ what:"Opens with the physiology lead-in you were given 10 minutes earlier. Any physiology or pathophysiology can follow. At least one question is on anatomy relevant to anaesthesia.",
+ weight:"Cardiovascular and respiratory physiology in detail; neuro, renal and hepatic physiology as applied to anaesthesia and intensive care; the anatomy of everywhere you put a needle, cannula or tube, plus heart and lung.",
+ stages:["01","02","03","04","05","06","12"],
+ slots:["lead","phys","phys","phys","anat"],
+ say:["Open with a one-line definition","Draw it: axes, units, normal values","Name the mechanism, not just the fact","Link it to a patient you would anaesthetise"]},
+{n:2,col:"etco2",short:"Pharmacology & measurement",name:"Applied basic science: pharmacology and clinical measurement",when:"Morning",
+ what:"Opens with the pharmacology lead-in. Applied pharmacology follows. At least one question is on clinical measurement.",
+ weight:"Pharmacokinetics and pharmacodynamics in detail; intimate knowledge of anaesthetic drugs and common ICU drugs; statistics and research protocols; physics of gases and vapours, electrical safety; the principle, limits, accuracy and failure modes of every monitor and of machines and ventilators.",
+ stages:["07","08","09","10","11"],
+ slots:["lead","pharm","pharm","meas","stat"],
+ say:["Class, then mechanism","PK then PD, with numbers","Dose, side effects, interactions","For a monitor: principle, accuracy, errors, safety"]},
+{n:3,col:"abp",short:"Anaesthesia & critical incidents",name:"Clinical: anaesthesia and management of critical incidents",when:"Afternoon",
+ what:"Opens with the anaesthesia scenario. Questions on the scenario lead on to regional anaesthesia and the subspecialties. At least one question is on a patient-related critical incident.",
+ weight:"Preoperative assessment through postoperative care; regional anaesthesia; paediatric, neuro, cardiac and obstetric principles; pain medicine; images may be used.",
+ stages:["12","13","14"],
+ slots:["lead","reg","sub","inc","pain"],
+ say:["Anaesthesia starts on the ward: assess and optimise","State monitoring and checks aloud","Give a plan and a plan B","Call for help early; name who you would call"]},
+{n:4,col:"nibp",short:"Critical care & emergency medicine",name:"Clinical: critical care and emergency medicine",when:"Afternoon",
+ what:"Opens with the critical care scenario. An internal medicine topic may follow, possibly linked to the scenario, then emergency medicine, general-interest questions and image interpretation.",
+ weight:"ICU medicine; resuscitation for all ages; prehospital care, trauma, medical and surgical emergencies, in-hospital and interhospital transport; a systematic approach to X-ray, CT, MRI and ultrasound.",
+ stages:["15","13"],
+ slots:["lead","med","em","gen","img"],
+ say:["ABCDE first, every time","Follow ALS: 4Hs and 4Ts once CPR starts","Treat while you assess","Describe an image by your system before you name a diagnosis"]}
+],
+slotName:{lead:"Lead-in",phys:"Physiology",anat:"Anatomy",pharm:"Pharmacology",meas:"Clinical measurement",stat:"Statistics & research",reg:"Regional anaesthesia",sub:"Subspecialty",inc:"Critical incident",pain:"Pain medicine",med:"Internal medicine",em:"Emergency medicine",gen:"General interest",img:"Image & data"},
+marks:[[2,"Pass","Fluent. Applies knowledge. Confident on core topics. Thorough, with depth. Corrected my own errors."],[1,"Borderline","Facts with no explanation. Incomplete or superficial on core topics. Disorganised, but nothing dangerous."],[0,"Fail","Did not answer despite prompts, or silence. Severe lack of understanding. Offered several answers to pick from. Dangerous approach."]],
+fail:["Reproducing facts without understanding","Not applying basic science to the clinical situation","Being unable to organise and express thoughts clearly","Unsound judgement, or no decision","Lack of factual knowledge"],
+probes:["Are you sure? Would anything change your mind?","Draw that for me.","Why? What is the mechanism?","What is the first thing you would actually do?","That has failed. What next?","What is the evidence for that?","What numbers would worry you?","What would you tell the patient or family?"],
+sessions2027:[["Online, French/English","19–21 Feb 2027"],["Online, Romanian/English","5–7 Mar 2027"],["Online, Portuguese/English","20–22 Aug 2027"],["Online, English","4–5 Sep 2027"],["Online, Italian/English","30–31 Oct 2027"],["Online, German/English","10–12 Dec 2027"]],
+reg2027:[["17 Nov 2026, 13:30 CET","Registration opens: European centres; Cairo for candidates working in Egypt; Porto and the August online session for candidates working in Brazil"],["2 Dec 2026, 13:30 CET","Registration opens for all candidates"],["21 Dec 2026, 23:59 CET","Registration closes"]]
+};
+ATLAS.trAdd=l=>l.forEach(([id,soe,slot,q,a,fu,o])=>ATLAS.tr.bank.push(Object.assign({id:"t:"+id,soe,slot,q,a,fu},o||{})));

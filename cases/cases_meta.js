@@ -1,0 +1,17 @@
+/* Cases: long and short case papers built from the basic sciences up */
+ATLAS.refModule("cases",{sid:"CS",short:"Cases",k:"CASE PAPERS",name:"Long & short cases",
+lede:"Case papers for SOE 3 and SOE 4: each starts from a realistic stem and works through the applied anatomy, physiology, biochemistry and pharmacology, the pathophysiology and types of disease (inflammatory, neoplastic and their salient points), assessment and investigations, optimisation, the anaesthetic plan, postoperative care, crises — and ends with the viva questions examiners ask.",
+tile:"Long cases in anaesthesia and critical care and short cases, each a full case paper from basic science to management, with viva questions."});
+
+/* builder: turns a structured case into a page with a table of contents */
+ATLAS.caseItem=function(o){
+  const v=(o.viva||[]).map(([q,a])=>'<details style="border:1px solid var(--line);border-radius:9px;padding:8px 12px;background:var(--panel2);margin-bottom:6px"><summary style="cursor:pointer;font-family:var(--display);font-weight:500">'+q+'</summary><div style="margin-top:6px;color:var(--ink2)">'+a+'</div></details>').join("");
+  const S=[["Key issues",o.issues],["Applied anatomy",o.anat],["Physiology",o.phys],["Biochemistry",o.bio],["Pharmacology",o.pharm],["Pathophysiology",o.path],["Types and classification of disease",o.types],["History and examination",o.hx],["Investigations",o.inv],["Optimisation",o.opt],["Anaesthetic plan",o.plan],["Postoperative care",o.post],["Complications and crises",o.cx],["Viva questions",v]].filter(x=>x[1]).map(([t,b])=>[t,b,1]);
+  return {id:o.id,g:o.g,n:o.n,s:o.s,whatT:"Case stem",what:o.stem,sec:S,p:o.p||[],q:(o.viva||[]).slice(0,3).map(([q,a])=>[q,a.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()]),links:o.links||[],aka:o.aka||[],toc:true}};
+
+ATLAS.refGroup("cases",{key:"long",col:"abp",name:"Long cases — anaesthesia",
+intro:"<p><b>How to present a scenario (about 5 minutes; five equal questions share 25 minutes).</b> 1. One-sentence summary (age, operation, urgency, key problems). 2. Problem list ranked by anaesthetic importance. 3. Assessment of each problem: severity, control, functional capacity, the investigations you want and what you expect them to show. 4. Optimisation, and whether it justifies delay. 5. Plan: preoperative (consent, premedication, risk scores), intraoperative (monitoring, technique, airway, drugs, fluids, analgesia, specific risks), postoperative (level of care, analgesia, complications to watch). 6. Risks for consent and when to involve seniors or the multidisciplinary team. Examiners then probe the basic science behind each problem — which is why each case paper begins with anatomy, physiology, biochemistry and pharmacology.</p>"});
+ATLAS.refGroup("cases",{key:"icu",col:"nibp",name:"Long cases — critical care",
+intro:"<p><b>ICU long cases</b> (EDAIC SOE 4) usually come with an ABG, chest X-ray, CT or ECG. Structure: immediate resuscitation (ABCDE) → working diagnosis and differentials → organ-by-organ assessment and support → specific treatment of the cause → complications, prognosis, communication and ethics (escalation, end of life, organ donation).</p>"});
+ATLAS.refGroup("cases",{key:"short",col:"etco2",name:"Short cases",
+intro:"<p><b>Short cases</b> are 5–7 minute focused scenarios — a crisis, a condition or a complication. Answer as you would act: recognise, call for help, immediate management, differentials, definitive treatment, follow-up — then the underlying science.</p>"});
